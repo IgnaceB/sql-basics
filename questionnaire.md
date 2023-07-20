@@ -126,7 +126,7 @@ solution: `78103`
 
 ### 16) What is the most common last name from our customers?
 ```
-select count(contactLastName) as countery, contactLastName from customers group by contactLastName order by countery desc limit 1select count(contactLastName),contactLastName as countery, contactLastName from customers group by contactLastName order by countery desc limit 1
+select count(contactLastName) as countery, contactLastName from customers group by contactLastName order by countery desc limit 1
 or 
 select max(mycount)from (select count(contactLastName) as mycount, contactLastName from customers group by contactLastName) as lineCount;
 ```
@@ -314,136 +314,194 @@ solution: `23`
 
 ### 32) What is the product code of our most popular product (in number purchased)?
 ```
-<Your SQL query here>
+select* from (select sum(orderdetails.quantityOrdered) as maxOrder, productCode from orderdetails group by productCode order by maxOrder desc limit 1) as tableMax
+or
+select sum(quantityOrdered) as maxOrder, productCode from orderdetails group by productCode order by maxOrder desc limit 1
 ```
 
-solution: `<your solution here>`
+solution: `S18_3232`
 
 ### 33) How many of our popular product did we effectively ship?
 ```
-<Your SQL query here>
+select sum(quantityOrdered) as maxOrder, productCode, orders.status from orderdetails inner join orders on orderdetails.orderNumber = orders.orderNumber where orders.status='shipped' group by productCode  order by maxOrder desc limit 1
+
 ```
 
-solution: `<your solution here>`
+solution: `1728`
 
 
 ### 34) Which check number paid for order 10210. Tip: Pay close attention to the date fields on both tables to solve this.  
 ```
-<Your SQL query here>
+select *from payments where customerNumber=(select customerNumber from orders where orderNumber='10210' and paymentDate between orderDate and shippedDate )
 ```
 
-solution: `<your solution here>`
+solution: `CI381435`
 
 ### 35) Which order was paid by check CP804873?
 ```
-<Your SQL query here>
+select *from orders where customerNumber=(select customerNumber from payments where checkNumber='CP804873' and paymentDate between orderDate and shippedDate )
+
 ```
 
-solution: `<your solution here>`
+solution: `10330`
 
 ### 36) How many payments do we have above 5000 EUR and with a check number with a 'D' somewhere in the check number, ending the check number with the digit 9?
 ```
-<Your SQL query here>
+select count(*)from payments where amount>5000 and payments.checkNumber like ('%D%') and  payments.checkNumber like ('%9')
+
 ```
 
-solution: `<your solution here>`
+solution: `3`
 
 
 ### 38) In which country do we have the most customers that we do not have an office in?
 ```
-<Your SQL query here>
+select count(*) as theCount,country from customers where country not in (select offices.country from offices ) group by country order by theCount desc limit 1
 ```
 
-solution: `<your solution here>`
+solution: `Germany`
 
 ### 39) What city has our biggest office in terms of employees?
 ```
-<Your SQL query here>
+select offices.city,offices.officeCode, count(employees.officeCode) as theCount from offices inner join employees on offices.officeCode = employees.officeCode group by offices.officeCode order by theCount desc limit 1
 ```
 
-solution: `<your solution here>`
+solution: `San Francisco`
 
 ### 40) How many employees does our largest office have, including leadership?
 
 ```
-<Your SQL query here>
+select count(*), officeCode from employees group by officeCode
 ```
 
-solution: `<your solution here>`
+solution: `6`
 
 
 ### 41) How many employees do we have on average per country (rounded)?
 ```
-<Your SQL query here>
+select round(avg(cnt.howMuch),0) from (select count(*) as howMuch from employees inner join offices o on employees.officeCode = o.officeCode group by o.country order by howMuch desc) as cnt
+
 ```
 
-solution: `<your solution here>`
+solution: `5`
 
 ### 42) What is the total value of all shipped & resolved sales ever combined?
 ```
-<Your SQL query here>
+select sum(priceEach * orderdetails.quantityOrdered)
+from orderdetails
+         inner join orders on orderdetails.orderNumber = orders.orderNumber
+where orders.status in('resolved','shipped');
 ```
 
-solution: `<your solution here>`
+solution: `8999330.52`
 
 ### 43) What is the total value of all shipped & resolved sales in the year 2005 combined? (based on shipping date)
 ```
-<Your SQL query here>
+select sum(priceEach * orderdetails.quantityOrdered)
+from orderdetails
+         inner join orders on orderdetails.orderNumber = orders.orderNumber
+where orders.status in('resolved','shipped') and shippedDate between '2005-01-01' and '2055-12-31'
 ```
 
-solution: `<your solution here>`
+solution: `1427944.97`
 
 
 ### 44) What was our most profitable year ever (based on shipping date), considering all shipped & resolved orders?
 ```
-<Your SQL query here>
+select sum(priceEach * orderdetails.quantityOrdered) as SUMMMM, orders.shippedDate
+from orderdetails
+         inner join orders on orderdetails.orderNumber = orders.orderNumber
+where orders.status in('resolved','shipped')
+group by YEAR(shippedDate)
+order by SUMMMM desc limit 1 
 ```
 
-solution: `<your solution here>`
+solution: `2004`
 
 ### 45) How much revenue did we make on in our most profitable year ever (based on shipping date), considering all shipped & resolved orders?
 ```
-<Your SQL query here>
+select sum(priceEach * orderdetails.quantityOrdered) as SUMMMM, orders.shippedDate
+from orderdetails
+         inner join orders on orderdetails.orderNumber = orders.orderNumber
+where orders.status in('resolved','shipped')
+group by YEAR(shippedDate)
+order by SUMMMM desc limit 1 
 ```
 
-solution: `<your solution here>`
+solution: `4321167.85`
 
 ### 46) What is the name of our biggest customer in the USA of terms of revenue?
 ```
-<Your SQL query here>
+select sum(payments.amount) as depense, payments.customerNumber, customers.customerName from payments
+    inner join customers on customers.customerNumber = payments.customerNumber
+    where customers.country='USA'
+group by payments.customerNumber
+order by depense desc limit 1
+
+or 
+
+select sum(orderdetails.quantityOrdered*(orderdetails.priceEach-p.buyPrice)) as benefice, c.customerNumber, c.customerName from orderdetails
+inner join products p on orderdetails.productCode = p.productCode
+inner join orders o on orderdetails.orderNumber = o.orderNumber
+inner join customers c on o.customerNumber = c.customerNumber
+where c.country='USA'
+group by o.customerNumber
+order by benefice desc limit 1
 ```
 
-solution: `<your solution here>`
+solution: `Mini Gifts Distributors Ltd.`
 
 
 ### 47) How much has our largest customer inside the USA ordered with us (total value)?
 ```
-<Your SQL query here>
+select sum(payments.amount) as depense, payments.customerNumber, customers.customerName from payments
+    inner join customers on customers.customerNumber = payments.customerNumber
+    where customers.country='USA'
+group by payments.customerNumber
+order by depense desc limit 1
 ```
 
-solution: `<your solution here>`
+solution: `584188.24`
 
 ### 48) How many customers do we have that never ordered anything?
 ```
-<Your SQL query here>
+select count(customerNumber) as thisNumber from customers where customerNumber not in(
+select  c.customerNumber from orderdetails
+        inner join orders o on orderdetails.orderNumber = o.orderNumber
+        inner join customers c on c.customerNumber=o.customerNumber
+        GROUP BY o.customerNumber)
 ```
 
-solution: `<your solution here>`
+solution: `24`
 
 ### 49) What is the last name of our best employee in terms of revenue?
 ```
-<Your SQL query here>
+select sum(orderdetails.quantityOrdered*(orderdetails.priceEach-p.buyPrice)) as benefice, c.salesRepEmployeeNumber, e.lastName from orderdetails
+inner join products p on orderdetails.productCode = p.productCode
+inner join orders o on orderdetails.orderNumber = o.orderNumber
+inner join customers c on o.customerNumber = c.customerNumber
+inner join employees e on c.salesRepEmployeeNumber = e.employeeNumber
+group by c.salesRepEmployeeNumber
+order by benefice desc limit 1
 ```
 
-solution: `<your solution here>`
+solution: `Hernandez`
 
 
 ### 50) What is the office name of the least profitable office in the year 2004?
 ```
-<Your SQL query here>
+select sum(orderdetails.quantityOrdered*(orderdetails.priceEach-p.buyPrice)) as benefice,o2.officeCode from orderdetails
+inner join products p on orderdetails.productCode = p.productCode
+inner join orders o on orderdetails.orderNumber = o.orderNumber
+inner join customers c on o.customerNumber = c.customerNumber
+inner join employees e on c.salesRepEmployeeNumber = e.employeeNumber
+inner join offices o2 on e.officeCode = o2.officeCode
+where o.shippedDate like '2004%'
+group by o2.officeCode
+order by benefice asc limit 1
 ```
 
-solution: `<your solution here>`
+solution: `Tokyo`
 
 
 ## Are you done? Amazing!
